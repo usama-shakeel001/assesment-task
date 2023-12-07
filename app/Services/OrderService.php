@@ -23,6 +23,32 @@ class OrderService
      */
     public function processOrder(array $data)
     {
-        // TODO: Complete this method
+
+        $merchant = Merchant::where('domain', $data['merchant_domain'])->first();
+
+        $existingOrder = Order::where('order_id', $data['order_id'])->exists();
+        if ($existingOrder) {
+            return;
+        }
+
+        $user = User::firstOrCreate(['email' => $data['customer_email']], ['name' => $data['customer_name']]);
+
+        $affiliate = $user->affiliate;
+
+        if (!$affiliate) {
+
+            $affiliate = $this->affiliateService->register($merchant, $data['customer_email'], $data['customer_name'], $merchant->default_commission_rate);
+        }
+
+        $orderData = [
+            'order_id' => $data['order_id'],
+            'subtotal' => $data['subtotal_price'],
+            'merchant_id' => $merchant->id,
+            'affiliate_id' => $affiliate->id,
+            'discount_code' => $data['discount_code'],
+            'customer_email' => $data['customer_email'],
+        ];
+
+        Order::create($orderData);
     }
 }

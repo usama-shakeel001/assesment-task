@@ -27,6 +27,28 @@ class AffiliateService
      */
     public function register(Merchant $merchant, string $email, string $name, float $commissionRate): Affiliate
     {
-        // TODO: Complete this method
+
+        $user = User::firstOrCreate(['email' => $email], ['name' => $name]);
+
+        $affiliateData = [
+            'user_id' => $user->id,
+            'merchant_id' => $merchant->id,
+            'commission_rate' => $commissionRate,
+        ];
+
+        try {
+            $affiliate = Affiliate::create($affiliateData);
+        } catch (\Exception $e) {
+            throw new AffiliateCreateException("Failed to create affiliate: " . $e->getMessage());
+        }
+
+
+        try {
+            Mail::to($email)->send(new AffiliateCreated($affiliate));
+        } catch (\Exception $e) {
+
+        }
+
+        return $affiliate;
     }
 }
